@@ -48,7 +48,7 @@ export default class EmployeeTable extends React.Component {
                     employees: res
                 })
                 //Adds error properties to all the existing employees
-                Object.keys(res).map((id)=>{
+                Object.keys(res).forEach(id=>{
                     this.setState(prevState =>({
                         employeeHasError:{
                             ...prevState.employeeHasError,

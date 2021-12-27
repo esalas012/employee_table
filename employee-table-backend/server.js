@@ -12,7 +12,6 @@ app.use(bodyParser.json())
 
 // @desc  Validates req and adds new employee
 app.post('/api/employees', (req, res)=>{
-    console.log(req);
     try{
         validateReqBody(req);
     }catch(err){
@@ -20,7 +19,6 @@ app.post('/api/employees', (req, res)=>{
         return;
     }
     const id = generateId();
-    console.log(id);
     employeeList[id] = {
         firstName: req.body.firstName,
         lastName: req.body.lastName,
@@ -59,7 +57,6 @@ app.put('/api/employees/:id', (req, res)=>{
 
 //@desc Return the employee record corresponding to the id parameter
 app.get('/api/employees/:id', (req, res)=>{
-    console.log("request received")
     if(!(req.params.id in employeeList)){
         res.status(404).send("ID requested was not found")
         return;
