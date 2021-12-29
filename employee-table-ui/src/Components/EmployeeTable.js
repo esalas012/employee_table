@@ -3,10 +3,21 @@ import EmployeeRow from './EmployeeRow';
 import NewEmployeeRecord from './NewEmployeeRecord';
 import SearchBox from './SearchBox';
 import { DateTime } from 'luxon';
+import Table from 'react-bootstrap/Table';
+import Button from 'react-bootstrap/Button';
+import Alert from './Alert.js'
 
 export default class EmployeeTable extends React.Component {
     //keeps track of updated rows ids
     rowsChanged = new Set();
+    firstNameErrorMsg = 'Required | Only letters';
+    lastNameErrorMsg = 'Required | Only letters';
+    hireDateErrorMsg = 'Required | Format YYYY-MM-DD | Past date';
+    roleErrorMsg = 'Required | Must be one of the following: CEO, VP, MANAGER, LACKEY';
+    successMsg = 'Your form was submitted';
+    errorMsg = 'Fix fields and Submit Form again';
+    errorTitle ='Oh Snap!! You got an error';
+    successTitle = 'Congrats!!! ';
 
     constructor(){
         super();
@@ -16,7 +27,9 @@ export default class EmployeeTable extends React.Component {
             newEmployeeCount: 0,
             newEmployeeErrors: {},
             searchResults: '',
-            employeeHasError:{}
+            employeeHasError:{},
+            showSuccessMsg: false,
+            showErrorMsg: false
         }
     }
 
@@ -86,10 +99,14 @@ export default class EmployeeTable extends React.Component {
             Promise.all(listOfRequests).then(()=>{
                 this.rowsChanged.clear();
                 this.getAllEmployees();
-                alert("Changes were successfully submitted")
+                this.setState({
+                    showSuccessMsg: true
+                })
             })
         }else{
-            alert("Form has errors. Fix error fields and submit changes again.");
+            this.setState({
+                showErrorMsg: true
+            })
         } 
     }
 
@@ -111,20 +128,40 @@ export default class EmployeeTable extends React.Component {
                     newEmployeeCount: 0
                 })
                 this.getAllEmployees();
+                this.setState({
+                    showSuccessMsg: true
+                })
             })
-        }  
+        }
+        else{
+            this.setState({
+                showErrorMsg: true
+            })
+        }   
     }
 
     updateEmployeeField = (event, id)=>{
-        const fieldLength = event.target.id.length;
-        const fieldId = event.target.id.substring(0, fieldLength -1);
-        //updates the value of a specific field. Field is determined by html tag id.
+        let field;
+        let value;
+        
+        if(event.target && event.target.localName === 'select') {
+            field = 'role';
+            value = event.target.value;
+        }
+        else if(event.target && event.target.localName === 'input') {
+            event.target.id.startsWith("first")? field = 'firstName': field = "lastName";
+            value = event.target.value;
+        }else{
+            field = 'hireDate';
+            value =  new Date(event).toISOString().substring(0,10);
+        }
+
         this.setState(prevState => ({
             employees: {
                 ...prevState.employees,
                 [id]:{
                     ...prevState.employees[id],
-                    [fieldId]: event.target.value
+                    [field]: value
                 }
             }
         }))
@@ -136,13 +173,10 @@ export default class EmployeeTable extends React.Component {
         //Loops through all the updated rows ids and validates each field
         this.rowsChanged.forEach((id)=>{
             const namePattern = /^[a-zA-Z]+( [a-zA-Z]+)*$/;
-            const hireDate = this.state.employees[id].hireDate;
-            const roles = ['CEO', 'VP', 'MANAGER', 'LACKEY'];
-            const role = this.state.employees[id].role ? this.state.employees[id].role.toUpperCase(): "";
 
             //validates first name
             if(!namePattern.test(this.state.employees[id].firstName)){
-                this.setEmployeeError(id, 'firstName', 'Only letters. Must not be empty');
+                this.setEmployeeError(id, 'firstName', this.firstNameErrorMsg);
                 hasErrors = true;
             }else{
                 this.setEmployeeError(id, 'firstName', '');
@@ -150,26 +184,10 @@ export default class EmployeeTable extends React.Component {
             
             //validates last name
             if(!namePattern.test(this.state.employees[id].lastName)){
-                this.setEmployeeError(id, 'lastName', 'Only letters. Must not be empty');
+                this.setEmployeeError(id, 'lastName', this.lastNameErrorMsg);
                 hasErrors = true;
             }else{
                 this.setEmployeeError(id, 'lastName', '');
-            }
-
-            //validates hire date
-            if(!hireDate || !DateTime.fromFormat(hireDate, 'yyyy-MM-dd').isValid || !(DateTime.fromFormat(hireDate, 'yyyy-MM-dd').toISODate() < DateTime.now().toISODate())){
-                this.setEmployeeError(id, 'hireDate', 'Date is required. Date must follow this format YYYY-MM-DD and must be in the past');
-                hasErrors = true;
-            }else{
-                this.setEmployeeError(id, 'hireDate', '');
-            }
-
-            //validates role
-            if(!roles.includes(role)){
-                this.setEmployeeError(id, 'role', 'Role is required and must be one of the following (case-insensitive): CEO, VP, MANAGER, LACKEY');
-                hasErrors = true;
-            }else{
-                this.setEmployeeError(id, 'role', '');
             }
         })
         return hasErrors;
@@ -210,14 +228,26 @@ export default class EmployeeTable extends React.Component {
         e.target.disabled = true;  
     }
 
-    updateNewEmployeeFields = (e) =>{ 
-        const fieldLength = e.target.id.length;     
-        const fieldId = e.target.id.substring(0, fieldLength -3);
-        //updates the value of a specific field. Field is determined by html tag id.
+    updateNewEmployeeFields = (event) =>{ 
+        let field;
+        let value;
+        
+        if(event.target && event.target.localName === 'select') {
+            field = 'role';
+            value = event.target.value;
+        }
+        else if(event.target && event.target.localName === 'input') {
+            field = event.target.id.substring(0, event.target.id.length -3);
+            value = event.target.value;
+        }else{
+            field = 'hireDate';
+            value =  new Date(event).toISOString().substring(0,10);
+        }
+
         this.setState(prevState => ({
             newEmployee: {
                 ...prevState.newEmployee,
-                [fieldId]: e.target.value
+                [field]: value
             }
         }))
     }
@@ -231,7 +261,7 @@ export default class EmployeeTable extends React.Component {
 
         //validates first name
         if(!namePattern.test(this.state.newEmployee.firstName)){
-            this.setNewEmployeeError('firstName', 'Only letters. Must not be empty');
+            this.setNewEmployeeError('firstName', this.firstNameErrorMsg);
             hasErrors = true;
         }else{
             this.setNewEmployeeError('firstName', '');
@@ -239,7 +269,7 @@ export default class EmployeeTable extends React.Component {
 
         //validates last name
         if(!namePattern.test(this.state.newEmployee.lastName)){
-            this.setNewEmployeeError('lastName', 'Only letters. Must not be empty');
+            this.setNewEmployeeError('lastName', this.lastNameErrorMsg);
             hasErrors = true;
         }else{
             this.setNewEmployeeError('lastName', '');
@@ -247,7 +277,7 @@ export default class EmployeeTable extends React.Component {
 
         //validates hire date
         if(!hireDate || !DateTime.fromFormat(hireDate, 'yyyy-MM-dd').isValid || !(DateTime.fromFormat(hireDate, 'yyyy-MM-dd').toISODate() < DateTime.now().toISODate())){
-            this.setNewEmployeeError('hireDate', 'Date is required. Date must follow this format YYYY-MM-DD and must be in the past');
+            this.setNewEmployeeError('hireDate', this.hireDateErrorMsg);
             hasErrors = true;
         }else{
             this.setNewEmployeeError('hireDate', '');
@@ -255,11 +285,12 @@ export default class EmployeeTable extends React.Component {
 
         //validates role
         if(!roles.includes(role)){
-            this.setNewEmployeeError('role', 'Role is required and must be one of the following (case-insensitive): CEO, VP, MANAGER, LACKEY');
+            this.setNewEmployeeError('role', this.roleErrorMsg);
             hasErrors = true;
         }else{
             this.setNewEmployeeError('role', '');
         }
+        
         return hasErrors;
     }
 
@@ -280,36 +311,33 @@ export default class EmployeeTable extends React.Component {
         })
     }
 
-    //@desc Gets corresponding employee record
-    searchById=(e)=>{
-        e.preventDefault();
-        const id = this.state.searchField;
-        if(id){
-            fetch(`http://localhost:5000/api/employees/${id}`)
-                .then(res=>res.json())
-                .then(res=>{
-                    this.setState({searchResults: JSON.stringify(res)})
-                })
-                .catch(this.setState({searchResults: "No Results found"}))
-        }
-    }
-
     updateSearchField=(e)=>{
         this.setState({
             searchField:e.target.value
         })
     }
 
-    clearSearchResults=()=>{
+    closeAlert=(msg)=>{
         this.setState({
-            searchField:'',
-            searchResults:''
+            [msg]: false
         })
     }
 
+
     render(){
-        const employeeRows = Object.keys(this.state.employees)
-            .map((employeeID)=>{
+        let filteredEmployees = Object.keys(this.state.employees).filter(employeeId=> {
+            let searchField =this.state.searchField ? this.state.searchField.toUpperCase(): '';
+            const employee = this.state.employees[employeeId];
+            if(searchField){
+                if(employee.firstName.toUpperCase().includes(searchField)) return true;
+                else if (employee.lastName.toUpperCase().includes(searchField)) return true;
+                else if (employee.role.toUpperCase().includes(searchField)) return true;
+                else if (employee.id.toUpperCase().includes(searchField)) return true;
+                else return false;
+            }
+            return true;
+        });
+        let employeeRows = filteredEmployees.map(employeeID=>{
                 return <EmployeeRow key={`r${employeeID}`}
                     employee = {this.state.employees[employeeID]} 
                     deleteEmployee= {(e)=> this.deleteEmployeeById(e, employeeID)}
@@ -327,29 +355,27 @@ export default class EmployeeTable extends React.Component {
 
         return (
             <React.Fragment>
-                <h2>IBM Coding Challenge</h2>
+                {this.state.showErrorMsg ? <Alert type="danger" closeAlert={e=> this.closeAlert("showErrorMsg")} msg={this.errorMsg} title={this.errorTitle}/>:<div></div>}
+                {this.state.showSuccessMsg ? <Alert type="success" closeAlert={e=> this.closeAlert("showSuccessMsg")} msg={this.successMsg} title={this.successTitle}/>:<div></div>}
+                <h1 style={{textAlign:"center"}}>Employee Management Form</h1>
+                <SearchBox updateSearchField = {this.updateSearchField}  searchField = {this.state.searchField}/>
                 <form>
-                <table style={{width:"100%"}}>
+                <Table striped bordered hover style={{width:"100%", marginTop:"1rem"}}>
                     <tbody>
                     <tr>
+                        <th>ID</th>
                         <th>First Name</th>
                         <th>Last Name</th>
                         <th>Hire Date</th>
                         <th>Role</th>
-                        <th>ID</th>
                     </tr>
                     {employeeRows}
                     {newEmployee}
                     </tbody>
-                </table>
-                <button onClick = {this.submitEmployeeUpdates} disabled ={this.rowsChanged.size ? false : true}>Submit Changes</button>
-                <button onClick = {this.addNewEmployeeFields} disabled = {this.state.newEmployeeCount ? true : false}>New Record</button>
+                </Table>
+                <Button style={{margin:"10px"}} variant = "primary" onClick = {this.submitEmployeeUpdates} disabled ={this.rowsChanged.size ? false : true}>Submit Changes</Button>
+                <Button variant = "primary" onClick = {this.addNewEmployeeFields} disabled = {this.state.newEmployeeCount ? true : false}>New Record</Button>
                 </form>
-                <SearchBox searchById={this.searchById} 
-                    searchResults={this.state.searchResults} 
-                    updateSearchField = {this.updateSearchField} 
-                    clearResults={this.clearSearchResults} 
-                    searchField = {this.state.searchField} />
             </React.Fragment>
         )
     }

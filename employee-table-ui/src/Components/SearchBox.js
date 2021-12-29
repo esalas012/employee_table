@@ -1,14 +1,11 @@
 import React from 'react';
+import '../SearchBox.css'
 
-const SearchBox = ({searchById, searchResults, updateSearchField, clearResults, searchField})=>{
+const SearchBox = ({updateSearchField, searchField})=>{
     return (
         <div>
-            <h3>Search</h3>
-            <input type = "text" value= {searchField} placeholder="Search by id" onChange={updateSearchField}/>
-            <button onClick={searchById}>Search</button>
-            <button onClick={clearResults}>Clear</button>
-            <h3>Results</h3>
-            <div>{searchResults}</div>
+            <label style={{textFont: "1rem", fontWeight: "bold" }} htmlFor="searchField">Search</label>
+            <input name="searchField" size="40" type = "search" value= {searchField} placeholder="Search by ID/Name/Role" onChange={updateSearchField}/>
         </div>
     )
 }

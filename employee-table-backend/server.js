@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const { DateTime } = require('luxon');
 const { CEO, VP, MANAGER, LACKEY } = require('./Constants');
 const { employeeList } = require('./employee_list');
+const { v4: uuidv4 } = require('uuid')
 
 app.use(cors())
 app.use(bodyParser.urlencoded({extended: false}));
@@ -18,7 +19,8 @@ app.post('/api/employees', (req, res)=>{
         res.status(404).send(err);
         return;
     }
-    const id = generateId();
+    const id = uuidv4();
+    console.log(id);
     employeeList[id] = {
         firstName: req.body.firstName,
         lastName: req.body.lastName,
