@@ -1,23 +1,26 @@
 import React from 'react';
 import EmployeeRow from './EmployeeRow';
-import NewEmployeeRecord from './NewEmployeeRecord';
 import SearchBox from './SearchBox';
 import { DateTime } from 'luxon';
 import Table from 'react-bootstrap/Table';
 import Button from 'react-bootstrap/Button';
 import Alert from './Alert.js'
 import DeleteModal from './modals/DeleteModal';
+import ReactPaginate from 'react-paginate';
+import UpdateEmployeeModal from './modals/UpdateEmployeeModal';
+import AddNewEmployeeModal from './modals/AddNewEmployeeModal';
+import { CSVLink} from 'react-csv';
 
 export default class EmployeeTable extends React.Component {
     //keeps track of updated rows ids
-    rowsChanged = new Set();
+    // rowsChanged = new Set();
     firstNameErrorMsg = 'Required | Only letters';
     lastNameErrorMsg = 'Required | Only letters';
     hireDateErrorMsg = 'Required | Format YYYY-MM-DD | Past date';
     roleErrorMsg = 'Required | Must be one of the following: CEO, VP, MANAGER, LACKEY';
     successMsg = 'Your form was submitted';
-    errorMsg = 'Fix fields and Submit Form again';
-    errorTitle ='Oh Snap!! You got an error';
+    // errorMsg = 'Fix fields and Submit Form again';
+    // errorTitle ='Oh Snap!! You got an error';
     successTitle = 'Congrats!!! ';
 
     constructor(){
@@ -25,14 +28,21 @@ export default class EmployeeTable extends React.Component {
         this.state = {
             employees:{},
             newEmployee:{},
-            newEmployeeCount: 0,
+            // newEmployeeCount: 0,
             newEmployeeErrors: {},
             searchResults: '',
             employeeHasError:{},
             showSuccessMsg: false,
-            showErrorMsg: false,
-            editEmployees:{},
-            showDeleteModal:{}
+            // showErrorMsg: false,
+            // editEmployees:{},
+            employeeUpdate:{},
+            showDeleteModal:{},
+            showUpdateModal:{},
+            showAddNewEmployeeModal:{},
+            pageNumber: 0,
+            forcePage: 0,
+            sortOrder: 'asc',
+            sortBy: 'id'
         }
     }
 
@@ -50,7 +60,7 @@ export default class EmployeeTable extends React.Component {
             }
         })
         .then(()=>{
-            this.closeDeleteModal()
+            this.closeDeleteModal(event)
             this.getAllEmployees()
         })
     }
@@ -75,52 +85,28 @@ export default class EmployeeTable extends React.Component {
                                 roleError: ""
                             }
                         },
-                        editEmployees:{
-                            ...prevState.editEmployees,
-                            [id]:false
+                        employeeUpdate: {
+                            firstName:'',
+                            lastName:'',
+                            hireDate: '',
+                            role:'',
+                            hireDate: ''
                         }
                     }))
                 })
             })
     }
 
-    // //@desc Updates employee records.
-    // submitEmployeeUpdates = (e)=>{
-    //     e.preventDefault();
-    //     if(!this.validateEmployeeFields()){
-    //         const listOfRequests = [];
-    //         //Loops through all the updated rows
-    //         //Creates promise and adds it to the list of request
-    //         //Only the rows changed are submitted
-    //         this.rowsChanged.forEach((id) => {
-    //             let req = fetch(`http://localhost:5000/api/employees/${id}`, {
-    //             method: 'PUT',
-    //             headers: {
-    //                 'Content-Type': 'application/json'
-    //             },
-    //             body: JSON.stringify(this.state.employees[id])
-    //             })
-    //             listOfRequests.push(req);
-    //         })
-
-    //         Promise.all(listOfRequests).then(()=>{
-    //             this.rowsChanged.clear();
-    //             this.getAllEmployees();
-    //             this.setState({
-    //                 showSuccessMsg: true
-    //             })
-    //         })
-    //     }else{
-    //         this.setState({
-    //             showErrorMsg: true
-    //         })
-    //     } 
-    // }
-
     //@desc Updates employee records.
     submitEmployeeUpdates = (e, id)=>{
         e.preventDefault();
         if(!this.validateEmployeeFields(id)){
+            this.setState(prevState=>({
+                employees: {
+                    ...prevState.employees,
+                    [id]: this.state.employeeUpdate
+                }
+            }))
             fetch(`http://localhost:5000/api/employees/${id}`, {
                 method: 'PUT',
                 headers: {
@@ -129,23 +115,18 @@ export default class EmployeeTable extends React.Component {
                 body: JSON.stringify(this.state.employees[id])
             })
             .then(res=>{
-                this.getAllEmployees();
-                // this.setState(prevState => ({
-                //     editEmployees: {
-                //         ...prevState.editEmployees,
-                //         [id]:false
-                //     }
-                // }))
-                this.setState({
-                    showSuccessMsg: true
-                })
+                this.closeUpdateAndAddModal(e, "showUpdateModal", "employeeUpdate")
+                this.setState(prevState => ({
+                    // editEmployees: {
+                    //     ...prevState.editEmployees,
+                    //     [id]:false
+                    // },
+                    showSuccessMsg:true
+                }))
+
             })
-            .catch(e=>console.log(e)) /// must change just for testing
-        }else{
-            this.setState({
-                showErrorMsg: true
-            })
-        } 
+            .catch(e=>console.log(e))
+        }
     }
 
     //@desc Submits a new employee record
@@ -161,49 +142,15 @@ export default class EmployeeTable extends React.Component {
             }).then(()=>{
                 //New employee record is set to its default value after successful submission
                 //Only one new employee record allowed at a time.
+                this.closeUpdateAndAddModal(e, 'showAddNewEmployeeModal','newEmployee')
                 this.setState({
                     newEmployee: {},
-                    newEmployeeCount: 0
-                })
-                this.getAllEmployees();
-                this.setState({
                     showSuccessMsg: true
                 })
+                this.getAllEmployees();
             })
-        }
-        else{
-            this.setState({
-                showErrorMsg: true
-            })
+            .catch(e=>console.log(e))
         }   
-    }
-
-    updateEmployeeField = (event, id)=>{
-        let field;
-        let value;
-        
-        if(event.target && event.target.localName === 'select') {
-            field = 'role';
-            value = event.target.value;
-        }
-        else if(event.target && event.target.localName === 'input') {
-            event.target.id.startsWith("first")? field = 'firstName': field = "lastName";
-            value = event.target.value;
-        }else{
-            field = 'hireDate';
-            value =  new Date(event).toISOString().substring(0,10);
-        }
-
-        this.setState(prevState => ({
-            employees: {
-                ...prevState.employees,
-                [id]:{
-                    ...prevState.employees[id],
-                    [field]: value
-                }
-            }
-        }))
-        this.rowsChanged.add(id); 
     }
 
     validateEmployeeFields = (id)=>{
@@ -211,7 +158,7 @@ export default class EmployeeTable extends React.Component {
         const namePattern = /^[a-zA-Z]+( [a-zA-Z]+)*$/;
 
         //validates first name
-        if(!namePattern.test(this.state.employees[id].firstName)){
+        if(!namePattern.test(this.state.employeeUpdate.firstName)){
             this.setEmployeeError(id, 'firstName', this.firstNameErrorMsg);
             hasErrors = true;
         }else{
@@ -219,7 +166,7 @@ export default class EmployeeTable extends React.Component {
         }
         
         //validates last name
-        if(!namePattern.test(this.state.employees[id].lastName)){
+        if(!namePattern.test(this.state.employeeUpdate.lastName)){
             this.setEmployeeError(id, 'lastName', this.lastNameErrorMsg);
             hasErrors = true;
         }else{
@@ -240,49 +187,25 @@ export default class EmployeeTable extends React.Component {
         }))
     }
 
-    addNewEmployeeFields= (e) =>{
-        e.preventDefault();
-        //if there is not a new employee section a new one will be added
-        if(!this.state.newEmployeeCount){
-            this.setState({
-                newEmployeeCount: 1,
-                newEmployee: {
-                    firstName: '',
-                    lastName: '',
-                    hireDate: '',
-                    role: ''
-                },
-                newEmployeeErrors: {
-                    firstNameError: '',
-                    lastNameError: '',
-                    hireDateError: '',
-                    roleError: ''
-                }
-            })
-        }
-        e.target.disabled = true;  
-    }
-
-    updateNewEmployeeFields = (event) =>{ 
+    updateEmployeeField = (event, state)=>{
         let field;
         let value;
-        
         if(event.target && event.target.localName === 'select') {
             field = 'role';
             value = event.target.value;
         }
         else if(event.target && event.target.localName === 'input') {
-            field = event.target.id.substring(0, event.target.id.length -3);
+            event.target.id.startsWith("first")? field = 'firstName': field = "lastName";
             value = event.target.value;
         }else{
             field = 'hireDate';
             value =  new Date(event).toISOString().substring(0,10);
         }
 
-        this.setState(prevState => ({
-            newEmployee: {
-                ...prevState.newEmployee,
-                [field]: value
+        this.setState(prevState=>({
+            [state]: {
+                ...prevState[state],
+                [field]:value
             }
         }))
     }
@@ -341,7 +264,6 @@ export default class EmployeeTable extends React.Component {
     deleteNewEmployee = (e) => {
         this.setState({
             newEmployee: {},
-            newEmployeeCount: 0,
             newEmployeeErrors:{}
         })
         this.closeDeleteModal()
@@ -349,7 +271,9 @@ export default class EmployeeTable extends React.Component {
 
     updateSearchField=(e)=>{
         this.setState({
-            searchField:e.target.value
+            searchField:e.target.value,
+            forcePage: 0,
+            pageNumber: 0
         })
     }
 
@@ -359,19 +283,7 @@ export default class EmployeeTable extends React.Component {
         })
     }
 
-    editEmployee = (event, id)=>{
-        this.setState(prevState => ({
-            editEmployees: {
-                ...prevState.editEmployees,
-                [id]:true
-            }
-        }))
-    }
-
     handleDelete = (event, id)=>{
-        //this.deleteEmployeeById(e, employeeID)
-        console.log(id);
-        
         this.setState({
             showDeleteModal: {
                 show: true,
@@ -379,11 +291,9 @@ export default class EmployeeTable extends React.Component {
                 event: event
             }
         })
-        console.log(this.state.showDeleteModal.id);
-        // return <DeleteModal id={id} show={true} handleDelete={e=>this.deleteEmployeeById(e,id)}/>
     }
 
-    closeDeleteModal = ()=>{
+    closeDeleteModal = (e)=>{
         this.setState({
             showDeleteModal: {
                 show: false,
@@ -393,46 +303,136 @@ export default class EmployeeTable extends React.Component {
         })
     }
 
+    closeUpdateAndAddModal = (event, modalName, state, errorState)=>{
+        this.setState({
+            [modalName]: {
+                show: false,
+                employeeId: '',
+                event: ''
+            },
+            [state]:{
+                firstName: '',
+                lastName:'',
+                hireDate:'',
+                role:'',
+                id:''
+            },
+            [errorState]:{
+                firstNameError: '',
+                lastNameError: '',
+                hireDateError: '',
+                roleError: ''
+            }
+        })
+    }
+
+    openEditEmployeeModal = (event, id) => {
+        let employees = this.state.employees[id];
+        this.setState({
+            showUpdateModal: {
+                show: true,
+                employeeId: id,
+                event: event
+            },
+            employeeUpdate:{
+                firstName: employees.firstName,
+                lastName: employees.lastName,
+                hireDate: employees.hireDate,
+                role: employees.role,
+                id:employees.id
+            }
+        })
+    }
+
+    openAddNewEmployeeModal = (event) => {
+        this.setState({
+            showAddNewEmployeeModal: {
+                show: true,
+                event: event
+            },
+            newEmployee:{
+                firstName: '',
+                lastName: '',
+                hireDate: '',
+                role: ''
+            }
+        })
+        console.log("state changed")
+    }
+
+
+    handlePageClick = (data) => {
+        this.setState({
+            pageNumber: data.selected
+        })
+    }
+
+    handleSort = (sortBy) =>{
+        if(this.state.sortOrder === 'asc'){
+            this.setState({
+                sortBy: sortBy,
+                sortOrder: 'desc'
+            })
+        }else{
+            this.setState({
+                sortBy: sortBy,
+                sortOrder: 'asc'
+            })
+        }
+        
+    }
+
 
     render(){
-        let filteredEmployees = Object.keys(this.state.employees).filter(employeeId=> {
+        const flattenEmployeeObject =[];
+        const sortOrder = this.state.sortOrder;
+        const sortBy =this.state.sortBy;
+        for(let employee in this.state.employees){
+            flattenEmployeeObject.push(this.state.employees[employee])
+        }
+        let sorted;
+        if(this.state.sortOrder === 'desc'){
+            sorted = flattenEmployeeObject.sort((e1, e2)=>e1[sortBy] > e2[sortBy]? 1: -1)
+        }            
+        else{
+            sorted = flattenEmployeeObject.sort((e1, e2)=>e1[sortBy] < e2[sortBy]? 1: -1)
+        }
+
+        const filteredEmployees = sorted.filter(employee=> {
             let searchField =this.state.searchField ? this.state.searchField.toUpperCase(): '';
-            const employee = this.state.employees[employeeId];
             if(searchField){
                 if(employee.firstName.toUpperCase().includes(searchField)) return true;
                 else if (employee.lastName.toUpperCase().includes(searchField)) return true;
                 else if (employee.role.toUpperCase().includes(searchField)) return true;
                 else if (employee.id.toUpperCase().includes(searchField)) return true;
+                else if (employee.hireDate.toUpperCase().includes(searchField)) return true;
                 else return false;
             }
             return true;
         });
-        let employeeRows = filteredEmployees.map(employeeID=>{
-                return <EmployeeRow key={`r${employeeID}`}
-                    employee = {this.state.employees[employeeID]} 
-                    // deleteEmployee= {(e)=> this.deleteEmployeeById(e, employeeID)}
-                    handleDelete={e => this.handleDelete(e, employeeID)}
-                    updateEmployeeField= {(e)=> this.updateEmployeeField(e, employeeID)}
-                    errors={this.state.employeeHasError[employeeID]}
-                    editEmployee = {e=>this.editEmployee(e, employeeID)}
-                    isEditOn= {this.state.editEmployees[employeeID]}
-                    submitUpdates = {(e)=>this.submitEmployeeUpdates(e, employeeID)}/>
-            })
-        console.log(employeeRows.length)
-        
-        const newEmployee = this.state.newEmployeeCount === 1 
-            ? <NewEmployeeRecord newEmployee={this.state.newEmployee} 
-                updateRecords = {this.updateNewEmployeeFields} 
-                submit={this.submitNewEmployee} 
-                deleteRecord={e => this.handleDelete(e, '')} 
-                errors={this.state.newEmployeeErrors}/> 
-            : undefined;
 
+        let employeeRows = filteredEmployees.map((employee, index)=>{
+            return <EmployeeRow key={`r${employee.id}`}
+                index = {index}
+                employee = {employee} 
+                handleDelete={e => this.handleDelete(e, employee.id)}
+                handleEdit = {e => this.openEditEmployeeModal(e, employee.id)}
+            />
+        })
+        const employeesPerPage = 10;
+        const pagesVisited = this.state.pageNumber * employeesPerPage;
+        const totalRecords = employeeRows.length;
+        const pageCount = Math.ceil(totalRecords/10)
+
+        employeeRows = employeeRows.slice(pagesVisited, pagesVisited + employeesPerPage);
+
+        const upArrow = '\u21E7';
+        const downArrow = '\u21E9';
         return (
             <React.Fragment>
-                {this.state.showErrorMsg ? <Alert type="danger" closeAlert={e=> this.closeAlert("showErrorMsg")} msg={this.errorMsg} title={this.errorTitle}/>:<div></div>}
+                <div style={{width: "95%", margin:"0 auto"}}>
                 {this.state.showSuccessMsg ? <Alert type="success" closeAlert={e=> this.closeAlert("showSuccessMsg")} msg={this.successMsg} title={this.successTitle}/>:<div></div>}
-                <h1 style={{textAlign:"center"}}>Employee Management Form</h1>
+                <h3 style={{textAlign:"center"}}>Employee Management Form</h3>
                 {this.state.showDeleteModal.show 
                     ? <DeleteModal 
                         employeeId={this.state.showDeleteModal.employeeId} 
@@ -441,24 +441,70 @@ export default class EmployeeTable extends React.Component {
                         handleClose={this.closeDeleteModal}
                         handleNewEmployeeDelete={this.deleteNewEmployee}
                         />: undefined} 
+                {this.state.showUpdateModal.show 
+                    ? <UpdateEmployeeModal 
+                        employeeId={this.state.showUpdateModal.employeeId} 
+                        show={true} 
+                        updateEmployeeField={(e)=> this.updateEmployeeField(e, 'employeeUpdate')}
+                        employeeUpdate={this.state.employeeUpdate}
+                        handleClose={e => this.closeUpdateAndAddModal(e, 'showUpdateModal', 'employeeUpdate', 'employeeHasError')}
+                        errors={this.state.employeeHasError[this.state.showUpdateModal.employeeId]}
+                        submitUpdates = {(e)=>this.submitEmployeeUpdates(e, this.state.showUpdateModal.employeeId)}
+                        />: undefined} 
+                {this.state.showAddNewEmployeeModal.show 
+                    ? <AddNewEmployeeModal 
+                        show={true} 
+                        newEmployee={this.state.newEmployee}
+                        updateEmployeeField={e =>this.updateEmployeeField(e, 'newEmployee')}
+                        handleClose={e => this.closeUpdateAndAddModal(e, 'showAddNewEmployeeModal','newEmployee', 'newEmployeeErrors')}
+                        errors={this.state.newEmployeeErrors}
+                        submitUpdates = {this.submitNewEmployee}
+                        />: undefined} 
+                
                 <SearchBox updateSearchField = {this.updateSearchField}  searchField = {this.state.searchField}/>
                 <form>
-                <Button variant = "primary" onClick = {this.addNewEmployeeFields} disabled = {this.state.newEmployeeCount ? true : false}> Add New Record</Button>
+                <Button variant = "primary" onClick = {this.openAddNewEmployeeModal}> Add New Record</Button>
+                
                 <Table striped bordered hover style={{width:"100%", marginTop:"1rem"}}>
                     <tbody>
                     <tr>
-                        <th>ID</th>
-                        <th>First Name</th>
-                        <th>Last Name</th>
-                        <th>Hire Date</th>
-                        <th>Role</th>
+                        <th></th>
+                        <th onClick = {e=>this.handleSort('id')}>ID  <span>{sortOrder==='asc' && sortBy ==='id'?upArrow:sortOrder==='desc' && sortBy ==='id'? downArrow:''} </span></th>
+                        <th onClick = {e=>this.handleSort('firstName')}>First Name  <span>{sortOrder==='asc' && sortBy ==='firstName'?upArrow:sortOrder==='desc' && sortBy ==='firstName'? downArrow:''}</span></th>
+                        <th onClick = {e=>this.handleSort('lastName')}>Last Name  <span>{sortOrder==='asc' && sortBy ==='lastName'?upArrow:sortOrder==='desc' && sortBy ==='lastName'? downArrow:''}</span></th>
+                        <th onClick = {e=>this.handleSort('hireDate')}>Hire Date  <span>{sortOrder==='asc' && sortBy ==='hireDate'?upArrow:sortOrder==='desc' && sortBy ==='hireDate'? downArrow:''}</span></th>
+                        <th onClick = {e=>this.handleSort('role')}>Role  <span>{sortOrder==='asc' && sortBy ==='role'?upArrow:sortOrder==='desc' && sortBy ==='role'? downArrow:''}</span></th>
                     </tr>
-                    {newEmployee}
                     {employeeRows}
                     </tbody>
                 </Table>
-                {/* <Button style={{margin:"10px"}} variant = "primary" onClick = {this.submitEmployeeUpdates} disabled ={this.rowsChanged.size ? false : true}>Submit Changes</Button> */}
+                <div style={{display:"flex", justifyContent:"space-between"}}>
+                    {"Number of employees: " + totalRecords }
+                    <CSVLink data={flattenEmployeeObject}>Download</CSVLink>
+                </div>
+                <ReactPaginate 
+                    previousLabel = {'previous'}
+                    nextLabel={'next'}
+                    breakLabel={'...'}
+                    pageCount={pageCount}
+                    marginPageDisplayed ={2}
+                    pageRangeDisplayed={3}
+                    onPageChange={this.handlePageClick}
+                    containerClassName={'pagination justify-content-center'}
+                    pageClassName={'page-item'}
+                    pageLinkClassName = {'page-link'}
+                    previousClassName = {'page-item'}
+                    previousLinkClassName = {'page-link'}
+                    nextClassName = {'page-item'}
+                    nextLinkClassName = {'page-link'}
+                    breakClassName = {'page-item'}
+                    breakLinkClassName = {'page-link'}
+                    activeClassName={'active'}
+                    forcePage={this.state.forcePage}
+                    />
+                    
                 </form>
+                </div>
             </React.Fragment>
         )
     }

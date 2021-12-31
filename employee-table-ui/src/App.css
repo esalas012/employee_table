@@ -2,3 +2,18 @@
 table, th, td {
   border:1px solid black;
 } */
+input{
+  border-radius: 5px;
+}
+
+th:hover{
+  cursor:pointer;
+}
+
+.datepicker{
+  size: 10px;
+}
+
+.modal-title, h3, th, label {
+  font-family:Verdana, Geneva, Tahoma, sans-serif;
+}
