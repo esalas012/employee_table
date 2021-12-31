@@ -12,15 +12,11 @@ import AddNewEmployeeModal from './modals/AddNewEmployeeModal';
 import { CSVLink} from 'react-csv';
 
 export default class EmployeeTable extends React.Component {
-    //keeps track of updated rows ids
-    // rowsChanged = new Set();
     firstNameErrorMsg = 'Required | Only letters';
     lastNameErrorMsg = 'Required | Only letters';
     hireDateErrorMsg = 'Required | Format YYYY-MM-DD | Past date';
     roleErrorMsg = 'Required | Must be one of the following: CEO, VP, MANAGER, LACKEY';
     successMsg = 'Your form was submitted';
-    // errorMsg = 'Fix fields and Submit Form again';
-    // errorTitle ='Oh Snap!! You got an error';
     successTitle = 'Congrats!!! ';
 
     constructor(){
@@ -28,19 +24,16 @@ export default class EmployeeTable extends React.Component {
         this.state = {
             employees:{},
             newEmployee:{},
-            // newEmployeeCount: 0,
             newEmployeeErrors: {},
             searchResults: '',
             employeeHasError:{},
             showSuccessMsg: false,
-            // showErrorMsg: false,
-            // editEmployees:{},
             employeeUpdate:{},
             showDeleteModal:{},
             showUpdateModal:{},
             showAddNewEmployeeModal:{},
             pageNumber: 0,
-            forcePage: 0,
+            // initialPage: -1,
             sortOrder: 'asc',
             sortBy: 'id'
         }
@@ -48,6 +41,9 @@ export default class EmployeeTable extends React.Component {
 
     componentDidMount(){
         this.getAllEmployees();
+        this.setState({
+            initialPage: 0
+        })
     }
 
     //@desc Deletes corresponding employee id
@@ -84,13 +80,13 @@ export default class EmployeeTable extends React.Component {
                                 hireDateError: "",
                                 roleError: ""
                             }
-                        },
+                        }, //Initializes employee update Object
                         employeeUpdate: {
                             firstName:'',
                             lastName:'',
                             hireDate: '',
                             role:'',
-                            hireDate: ''
+                            id:''
                         }
                     }))
                 })
@@ -116,14 +112,9 @@ export default class EmployeeTable extends React.Component {
             })
             .then(res=>{
                 this.closeUpdateAndAddModal(e, "showUpdateModal", "employeeUpdate")
-                this.setState(prevState => ({
-                    // editEmployees: {
-                    //     ...prevState.editEmployees,
-                    //     [id]:false
-                    // },
+                this.setState({
                     showSuccessMsg:true
-                }))
-
+                })
             })
             .catch(e=>console.log(e))
         }
@@ -141,7 +132,6 @@ export default class EmployeeTable extends React.Component {
                 body: JSON.stringify(this.state.newEmployee)
             }).then(()=>{
                 //New employee record is set to its default value after successful submission
-                //Only one new employee record allowed at a time.
                 this.closeUpdateAndAddModal(e, 'showAddNewEmployeeModal','newEmployee')
                 this.setState({
                     newEmployee: {},
@@ -176,6 +166,7 @@ export default class EmployeeTable extends React.Component {
     }
 
     setEmployeeError(id, name, error){
+        //Every employee id has an employee error object associated with it.
         this.setState(prevState =>({
             employeeHasError:{
                 ...prevState.employeeHasError,
@@ -188,6 +179,8 @@ export default class EmployeeTable extends React.Component {
     }
 
     updateEmployeeField = (event, state)=>{
+        //UpdateEmployeeField triggers when any of the input fields for adding or updating an employee are changed.
+        //Updates state of new employee or existing employee
         let field;
         let value;
         if(event.target && event.target.localName === 'select') {
@@ -211,6 +204,7 @@ export default class EmployeeTable extends React.Component {
     }
 
     validateNewEmployeeFields= ()=>{
+        //Validates all the fields in the add new employee form.
         let hasErrors = false;
         const namePattern = /^[a-zA-Z]+( [a-zA-Z]+)*$/;
         const hireDate = this.state.newEmployee.hireDate;
@@ -253,6 +247,7 @@ export default class EmployeeTable extends React.Component {
     }
 
     setNewEmployeeError(name, error){
+        //adds field specific error for a new record
         this.setState(prevState =>({
             newEmployeeErrors:{
                 ...prevState.newEmployeeErrors,
@@ -262,6 +257,8 @@ export default class EmployeeTable extends React.Component {
     }
 
     deleteNewEmployee = (e) => {
+        //on delete new employee resets the state of a new employee 
+        //and any errors associated with it
         this.setState({
             newEmployee: {},
             newEmployeeErrors:{}
@@ -270,9 +267,10 @@ export default class EmployeeTable extends React.Component {
     }
 
     updateSearchField=(e)=>{
+        //updates state of search field
         this.setState({
             searchField:e.target.value,
-            forcePage: 0,
+            initialPage: 0,
             pageNumber: 0
         })
     }
@@ -304,6 +302,9 @@ export default class EmployeeTable extends React.Component {
     }
 
     closeUpdateAndAddModal = (event, modalName, state, errorState)=>{
+        //resets state of an existing employee update 
+        //resets state of a new employee
+        //closes modals
         this.setState({
             [modalName]: {
                 show: false,
@@ -327,6 +328,7 @@ export default class EmployeeTable extends React.Component {
     }
 
     openEditEmployeeModal = (event, id) => {
+        //opens edit employee modal and sets state of existing employee fields
         let employees = this.state.employees[id];
         this.setState({
             showUpdateModal: {
@@ -345,6 +347,7 @@ export default class EmployeeTable extends React.Component {
     }
 
     openAddNewEmployeeModal = (event) => {
+        //opens new employee modal and sets state of new employee fields
         this.setState({
             showAddNewEmployeeModal: {
                 show: true,
@@ -357,17 +360,18 @@ export default class EmployeeTable extends React.Component {
                 role: ''
             }
         })
-        console.log("state changed")
     }
 
 
     handlePageClick = (data) => {
+        //Paginator
         this.setState({
             pageNumber: data.selected
         })
     }
 
     handleSort = (sortBy) =>{
+        //sets sortBy and sortOrder of each column
         if(this.state.sortOrder === 'asc'){
             this.setState({
                 sortBy: sortBy,
@@ -500,9 +504,8 @@ export default class EmployeeTable extends React.Component {
                     breakClassName = {'page-item'}
                     breakLinkClassName = {'page-link'}
                     activeClassName={'active'}
-                    forcePage={this.state.forcePage}
-                    />
-                    
+                    initialPage={this.state.initialPage}
+                    />   
                 </form>
                 </div>
             </React.Fragment>

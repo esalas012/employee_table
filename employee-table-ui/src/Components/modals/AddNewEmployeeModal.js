@@ -33,7 +33,6 @@ const AddNewEmployeeModal = ({show, handleClose, updateEmployeeField, newEmploye
                     </Form.Group>
                     <Form.Group className="mb-3" controlId="hireDateAForm">
                         <Form.Label>Hire Date</Form.Label>
-                        {/* <Form.Control type="date" placeholder="Enter Hire Date" required pattern="\d{4}-\d2-\d{2}" /> */}
                         <div><DatePicker 
                         maxDate = {DateTime.now().minus({days:1}).toJSDate()} 
                         showDisabledMonthNavigation 
@@ -46,13 +45,11 @@ const AddNewEmployeeModal = ({show, handleClose, updateEmployeeField, newEmploye
                         </div>
                         <div style={{color:"red"}}>{errors?errors.hireDateError:undefined}</div>
                     </Form.Group>
-                    {/* <Form.Group className="mb-3" controlId="formHireDate"> */}
                     <Form.Label>Role</Form.Label>
                     <Form.Select className="mb-3" defaultValue="Select" onChange={updateEmployeeField}>
                         {roles}
                     </Form.Select>
                     <div style={{color:"red"}}>{errors?errors.roleError:undefined}</div>
-                    {/* </Form.Group> */}
                     
                 </Form>
             </Modal.Body>

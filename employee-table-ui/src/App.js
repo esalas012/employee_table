@@ -1,5 +1,5 @@
 import React from 'react';
-import './App.css';
+import './css-files/App.css';
 import EmployeeTable from './Components/EmployeeTable';
 
 function App() {

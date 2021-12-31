@@ -21,56 +21,56 @@ exports.employeeList = {
         id: '394e8282-6976-11ec-90d6-0242ac120003'
     },
     '394e83d6-6976-11ec-90d6-0242ac120003': {
-        firstName: "Alfred",
-        lastName: "Hong",
-        hireDate: "2012-12-12",
+        firstName: "James",
+        lastName: "Smith",
+        hireDate: "2012-12-08",
         role: "Manager",
         id: '394e83d6-6976-11ec-90d6-0242ac120003'
     },
     '394e8502-6976-11ec-90d6-0242ac120003': {
-        firstName: "Maria",
-        lastName: "Fuentes",
-        hireDate: "2005-09-10",
-        role: "CEO",
+        firstName: "Greg",
+        lastName: "Fong",
+        hireDate: "2005-09-11",
+        role: "Lackey",
         id: '394e8502-6976-11ec-90d6-0242ac120003'
     },
     '394e8624-6976-11ec-90d6-0242ac120003': {
-        firstName: "Tom",
-        lastName: "Smith",
-        hireDate: "2001-03-05",
+        firstName: "Michael",
+        lastName: "Smithy",
+        hireDate: "2013-03-05",
         role: "VP",
         id: '394e8624-6976-11ec-90d6-0242ac120003'
     },
     '394e89b2-6976-11ec-90d6-0242ac120003': {
-        firstName: "Alfred",
+        firstName: "Wonton",
         lastName: "Hong",
-        hireDate: "2012-12-12",
-        role: "Manager",
+        hireDate: "2018-12-12",
+        role: "VP",
         id: '394e89b2-6976-11ec-90d6-0242ac120003'
     },
     '394e8b1a-6976-11ec-90d6-0242ac120003': {
-        firstName: "Maria",
-        lastName: "Fuentes",
-        hireDate: "2005-09-10",
+        firstName: "James",
+        lastName: "Walker",
+        hireDate: "2009-09-02",
         role: "CEO",
         id: '394e8b1a-6976-11ec-90d6-0242ac120003'
     },
     '394e8ca0-6976-11ec-90d6-0242ac120003': {
-        firstName: "Tom",
+        firstName: "Alex",
         lastName: "Smith",
         hireDate: "2001-03-05",
         role: "VP",
         id: '394e8ca0-6976-11ec-90d6-0242ac120003'
     },
     '394e8e3a-6976-11ec-90d6-0242ac120003': {
-        firstName: "Alfred",
-        lastName: "Hong",
-        hireDate: "2012-12-12",
+        firstName: "Ali",
+        lastName: "Baba",
+        hireDate: "2013-12-12",
         role: "Manager",
         id: '394e8e3a-6976-11ec-90d6-0242ac120003'
     },
     '394e8f8e-6976-11ec-90d6-0242ac120003': {
-        firstName: "Maria",
+        firstName: "Ernesto",
         lastName: "Fuentes",
         hireDate: "2005-09-10",
         role: "CEO",

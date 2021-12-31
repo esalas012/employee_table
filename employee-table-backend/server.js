@@ -11,7 +11,7 @@ app.use(cors())
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json())
 
-// @desc  Validates req and adds new employee
+// @desc  Validates request and adds new employee
 app.post('/api/employees', (req, res)=>{
     try{
         validateReqBody(req);
@@ -19,8 +19,8 @@ app.post('/api/employees', (req, res)=>{
         res.status(404).send(err);
         return;
     }
+    //Using universally unique identifier. Assuming that the chances of getting the same id twice or more is extremely small.
     const id = uuidv4();
-    console.log(id);
     employeeList[id] = {
         firstName: req.body.firstName,
         lastName: req.body.lastName,
@@ -110,21 +110,6 @@ const validateRole = (role)=>{
     }
     return false;
 }
-
-const generateId = ()=>{
-    //Returns 1 if there are no employees
-    //Returns the highest id value + 1 if there is more than one employee.
-    const employeeIds = Object.keys(employeeList)
-    if(employeeIds.length > 0){
-        let highestId = employeeIds.reduce((accumulator, value)=>{
-            return value > accumulator ? value : accumulator
-        }, employeeIds[0]);
-        return parseInt(highestId) + 1;
-    }
-    return 1;
-}
-
-
 
 app.listen(5000, (err)=>{
     err ? console.log(err):console.log("Server listening on port 5000");
