@@ -162,6 +162,10 @@ export default class EmployeeTable extends React.Component {
         }else{
             this.setEmployeeError(id, 'lastName', '');
         }
+
+        //Did not add validation for hire date or role for update form
+        //For the role the user can only pick from 4 options
+        //For the hire date any wrong value will default to a value allowed.
         return hasErrors;
     }
 
@@ -247,7 +251,7 @@ export default class EmployeeTable extends React.Component {
     }
 
     setNewEmployeeError(name, error){
-        //adds field specific error for a new record
+        //adds errors to each field for a new employee record
         this.setState(prevState =>({
             newEmployeeErrors:{
                 ...prevState.newEmployeeErrors,
@@ -257,7 +261,8 @@ export default class EmployeeTable extends React.Component {
     }
 
     deleteNewEmployee = (e) => {
-        //on delete new employee resets the state of a new employee 
+        //when the new employee form is canceled the state of a new employee is reset
+        //resets the state of a new employee 
         //and any errors associated with it
         this.setState({
             newEmployee: {},
@@ -276,12 +281,14 @@ export default class EmployeeTable extends React.Component {
     }
 
     closeAlert=(msg)=>{
+        //closes alert message
         this.setState({
             [msg]: false
         })
     }
 
     handleDelete = (event, id)=>{
+        //shows delete modal
         this.setState({
             showDeleteModal: {
                 show: true,
@@ -371,7 +378,7 @@ export default class EmployeeTable extends React.Component {
     }
 
     handleSort = (sortBy) =>{
-        //sets sortBy and sortOrder of each column
+        //sets sortBy and sortOrder for each column
         if(this.state.sortOrder === 'asc'){
             this.setState({
                 sortBy: sortBy,
@@ -391,6 +398,7 @@ export default class EmployeeTable extends React.Component {
         const flattenEmployeeObject =[];
         const sortOrder = this.state.sortOrder;
         const sortBy =this.state.sortBy;
+        //employee objects are flaltten into an array to sort and filter
         for(let employee in this.state.employees){
             flattenEmployeeObject.push(this.state.employees[employee])
         }
@@ -414,7 +422,7 @@ export default class EmployeeTable extends React.Component {
             }
             return true;
         });
-
+        //returns an EmployeeRow tag for each employee object
         let employeeRows = filteredEmployees.map((employee, index)=>{
             return <EmployeeRow key={`r${employee.id}`}
                 index = {index}
@@ -423,6 +431,8 @@ export default class EmployeeTable extends React.Component {
                 handleEdit = {e => this.openEditEmployeeModal(e, employee.id)}
             />
         })
+
+        //Pagination variables
         const employeesPerPage = 10;
         const pagesVisited = this.state.pageNumber * employeesPerPage;
         const totalRecords = employeeRows.length;
@@ -437,6 +447,7 @@ export default class EmployeeTable extends React.Component {
                 <div style={{width: "95%", margin:"0 auto"}}>
                 {this.state.showSuccessMsg ? <Alert type="success" closeAlert={e=> this.closeAlert("showSuccessMsg")} msg={this.successMsg} title={this.successTitle}/>:<div></div>}
                 <h3 style={{textAlign:"center"}}>Employee Management Form</h3>
+                {/* Delete modal is shown when the state of deleteModalShow changes to true*/}
                 {this.state.showDeleteModal.show 
                     ? <DeleteModal 
                         employeeId={this.state.showDeleteModal.employeeId} 
@@ -445,6 +456,7 @@ export default class EmployeeTable extends React.Component {
                         handleClose={this.closeDeleteModal}
                         handleNewEmployeeDelete={this.deleteNewEmployee}
                         />: undefined} 
+                {/* Update modal is shown when the state of updateModalShow changes to true*/}
                 {this.state.showUpdateModal.show 
                     ? <UpdateEmployeeModal 
                         employeeId={this.state.showUpdateModal.employeeId} 
@@ -455,6 +467,7 @@ export default class EmployeeTable extends React.Component {
                         errors={this.state.employeeHasError[this.state.showUpdateModal.employeeId]}
                         submitUpdates = {(e)=>this.submitEmployeeUpdates(e, this.state.showUpdateModal.employeeId)}
                         />: undefined} 
+                {/*Add New Employee Modal is shown when the state of showAddNewEmployeeModal changes */}
                 {this.state.showAddNewEmployeeModal.show 
                     ? <AddNewEmployeeModal 
                         show={true} 
@@ -472,6 +485,7 @@ export default class EmployeeTable extends React.Component {
                 <Table striped bordered hover style={{width:"100%", marginTop:"1rem"}}>
                     <tbody>
                     <tr>
+                        {/*adds sorting icons and enables sort for each column*/ }
                         <th></th>
                         <th onClick = {e=>this.handleSort('id')}>ID  <span>{sortOrder==='asc' && sortBy ==='id'?upArrow:sortOrder==='desc' && sortBy ==='id'? downArrow:''} </span></th>
                         <th onClick = {e=>this.handleSort('firstName')}>First Name  <span>{sortOrder==='asc' && sortBy ==='firstName'?upArrow:sortOrder==='desc' && sortBy ==='firstName'? downArrow:''}</span></th>
@@ -484,8 +498,10 @@ export default class EmployeeTable extends React.Component {
                 </Table>
                 <div style={{display:"flex", justifyContent:"space-between"}}>
                     {"Number of employees: " + totalRecords }
-                    <CSVLink data={flattenEmployeeObject}>Download</CSVLink>
+                    <CSVLink data={flattenEmployeeObject}>Download CSV</CSVLink>
                 </div>
+
+                {/*pagination icon*/}
                 <ReactPaginate 
                     previousLabel = {'previous'}
                     nextLabel={'next'}
